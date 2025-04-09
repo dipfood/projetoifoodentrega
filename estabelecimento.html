@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Estabelecimento</title>
+    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json"> 
+    <meta name="theme-color" content="#3498db"> 
+</head>
+<body>
+    <div class="app-container">
+        <header style="background-color: #3498db;"> 
+             <!-- Simple placeholder/icon for consistency -->
+            <span class="icon-button" style="visibility: hidden;"><i class="fas fa-bars"></i></span>
+            <h1>Painel do Estabelecimento</h1>
+             <!-- Link to switch view -->
+            <a href="index.html" class="switch-view-link"><i class="fas fa-motorcycle"></i> Entregador</a>
+        </header>
+
+        <main id="main-content">
+            <form id="delivery-form" class="establishment-form">
+                <h2>Criar Nova Entrega</h2>
+
+                <div class="form-group">
+                    <label for="establishment-name">Nome do Estabelecimento:</label>
+                    <input type="text" id="establishment-name" name="establishment-name" value="Restaurante Exemplo" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="customer-name">Nome do Cliente:</label>
+                    <input type="text" id="customer-name" name="customer-name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="delivery-address">Endereço de Entrega:</label>
+                    <input type="text" id="delivery-address" name="delivery-address" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="order-id">Número do Pedido (opcional):</label>
+                    <input type="number" id="order-id" name="order-id">
+                </div>
+
+                <button type="submit" class="button send-delivery">Enviar Entrega</button>
+
+                <div id="confirmation-message" class="hidden">
+                    Entrega enviada com sucesso!
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <script src="estabelecimento.script.js"></script>
+</body>
+</html>

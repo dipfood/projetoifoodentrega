@@ -1,0 +1,52 @@
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Entregador</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json"> 
+    <meta name="theme-color" content="#e74c3c"> 
+    <!-- Add icons for PWA/Homescreen later if available -->
+    <!-- <link rel="apple-touch-icon" href="/icons/icon-192x192.png"> -->
+
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <button id="history-toggle" class="icon-button"><i class="fas fa-bars"></i></button>
+            <h1>Painel do Entregador</h1>
+            <a href="estabelecimento.html" class="switch-view-link"><i class="fas fa-store"></i> Estabelecimento</a>
+        </header>
+
+        <nav id="history-menu" class="history-menu hidden">
+            <h2>Histórico de Entregas</h2>
+            <ul id="history-list">
+                <li>Nenhuma entrega finalizada ainda.</li>
+            </ul>
+            <button id="close-history" class="icon-button close-button"><i class="fas fa-times"></i></button>
+        </nav>
+
+        <main id="main-content">
+            <div id="no-delivery" class="message">
+                Aguardando novas entregas...
+            </div>
+
+            <div id="delivery-card" class="delivery-card hidden">
+                <h2>Nova Entrega!</h2>
+                <p><strong>Pedido:</strong> <span id="order-id"></span></p>
+                <p><strong>Cliente:</strong> <span id="customer-name"></span></p>
+                <p><strong>Endereço:</strong> <span id="delivery-address"></span></p>
+                <p><strong>Estabelecimento:</strong> <span id="establishment-name"></span></p>
+                <div class="actions">
+                    <button id="accept-button" class="button accept">Aceitar</button>
+                    <button id="finalize-button" class="button finalize" disabled>Finalizar Entrega</button>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
