@@ -126,6 +126,14 @@ header h1 {
     margin-top: 3px;
 }
 
+#history-list li .timestamp-hist {
+    display: block;
+    font-size: 0.75em;
+    color: #999;
+    margin-top: 2px;
+    text-align: right;
+}
+
 .close-button {
     position: absolute;
     top: 10px;
@@ -202,6 +210,7 @@ header h1 {
 .button.finalize:hover {
     background-color: #2980b9;
 }
+
 .button.finalize:disabled {
     background-color: #bdc3c7; 
     cursor: not-allowed;
@@ -269,8 +278,10 @@ header h1 {
     border: 1px solid #d6e9c6;
     border-radius: 4px;
     text-align: center;
+    transition: opacity 0.5s ease-out; /* Add fade effect */
 }
 
 .hidden {
     display: none;
+    opacity: 0; /* Start hidden confirmation message as transparent */
 }

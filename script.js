@@ -11,18 +11,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const orderIdSpan = document.getElementById('order-id');
     const customerNameSpan = document.getElementById('customer-name');
     const deliveryAddressSpan = document.getElementById('delivery-address');
-    const establishmentNameSpan = document.getElementById('establishment-name'); // Added
+    const establishmentNameSpan = document.getElementById('establishment-name');
     const acceptButton = document.getElementById('accept-button');
     const finalizeButton = document.getElementById('finalize-button');
-    // const simulateDeliveryButton = document.getElementById('simulate-new-delivery'); // Removed
     const historyList = document.getElementById('history-list');
 
     // --- State ---
     let currentDelivery = null;
-    const PENDING_DELIVERY_KEY = 'pendingDelivery'; // Key for localStorage communication
     const COMPLETED_DELIVERIES_KEY = 'completedDeliveries'; // Key for history
     let completedDeliveries = JSON.parse(localStorage.getItem(COMPLETED_DELIVERIES_KEY)) || []; // Load history
-    let checkInterval = null; // To store the interval ID
+    let deliveryCheckInterval = null;
+
+    // --- Communication Mechanism ---
+    // NOTE: This uses localStorage polling and the 'storage' event for communication.
+    // This works only if the Estabelecimento and Entregador views are open
+    // in DIFFERENT TABS of the SAME BROWSER on the SAME DEVICE.
+    //
+    // For TRUE cross-device communication (different phones/computers),
+    // a backend server or a real-time cloud service (like WebSockets,
+    // Firebase Realtime Database, Pusher, Ably, etc.) is required.
+    // The delivery person's app would connect to the service (e.g., via WebSocket)
+    // and listen for 'new_delivery' events pushed by the server when an
+    // establishment creates one. Polling localStorage would be replaced
+    // by this real-time subscription.
+    // ---
 
     // --- Functions ---
 
@@ -30,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Displaying delivery:", delivery);
         if (!delivery || !delivery.id || !delivery.customerName || !delivery.address || !delivery.establishmentName) {
             console.error("Invalid delivery data received:", delivery);
-            // Optionally clear the invalid data from localStorage
+            // Optionally clear the invalid data from localStorage if it wasn't already cleared
             // localStorage.removeItem(PENDING_DELIVERY_KEY);
             return; // Don't display incomplete data
         }
@@ -45,14 +57,12 @@ document.addEventListener('DOMContentLoaded', () => {
         deliveryCard.classList.remove('hidden');
         acceptButton.disabled = false;
         finalizeButton.disabled = true;
-        // simulateDeliveryButton.classList.add('hidden'); // Button removed
     }
 
     function clearCurrentDelivery() {
         currentDelivery = null;
         deliveryCard.classList.add('hidden');
         noDeliveryMessage.classList.remove('hidden');
-        // simulateDeliveryButton.classList.remove('hidden'); // Button removed
         startCheckingForDeliveries(); // Start checking again once free
     }
 
@@ -69,118 +79,100 @@ document.addEventListener('DOMContentLoaded', () => {
             listItem.innerHTML = `
                 Pedido #${delivery.id} - ${delivery.customerName}
                 <span class="establishment-hist">De: ${delivery.establishmentName || 'Estabelecimento Desconhecido'}</span>
+                <span class="timestamp-hist">${new Date(delivery.timestamp).toLocaleTimeString()}</span>
             `;
             historyList.appendChild(listItem);
         });
     }
 
     function saveCompletedDeliveries() {
-        localStorage.setItem(COMPLETED_DELIVERIES_KEY, JSON.stringify(completedDeliveries));
+        try {
+            localStorage.setItem(COMPLETED_DELIVERIES_KEY, JSON.stringify(completedDeliveries));
+        } catch (error) {
+            console.error("Error saving completed deliveries:", error);
+            // Handle potential storage quota issues if necessary
+        }
     }
 
-    // Function to check localStorage for new deliveries
-    function checkForNewDelivery() {
-        // console.log("Checking for new delivery..."); // Uncomment for debugging
-        if (currentDelivery) {
-             // console.log("Already have an active delivery. Skipping check."); // Uncomment for debugging
-             stopCheckingForDeliveries(); // Stop checking if busy
-             return;
-        }
+    function fetchDelivery() {
+        if (currentDelivery) return;
 
-        const pendingDeliveryData = localStorage.getItem(PENDING_DELIVERY_KEY);
-        if (pendingDeliveryData) {
-            console.log("Found pending delivery data:", pendingDeliveryData);
-            try {
-                const newDelivery = JSON.parse(pendingDeliveryData);
-                // Important: Remove the item *before* displaying to avoid race conditions
-                localStorage.removeItem(PENDING_DELIVERY_KEY);
-                stopCheckingForDeliveries(); // Stop checking once a delivery is found
-                displayDelivery(newDelivery);
-            } catch (error) {
-                console.error("Error parsing pending delivery data:", error);
-                // Clear potentially corrupted data
-                localStorage.removeItem(PENDING_DELIVERY_KEY);
+        // Simulate API call
+        setTimeout(() => {
+            const delivery = getPendingDelivery(); // Get from "database"
+            if (delivery) {
+                displayDelivery(delivery);
             }
-        }
+        }, 500);
     }
 
-    // Start periodic check
     function startCheckingForDeliveries() {
-        if (checkInterval) return; // Already checking
-        console.log("Starting to check for deliveries every 3 seconds.");
-        // Check immediately first
-        checkForNewDelivery();
-        // Then check periodically
-        checkInterval = setInterval(checkForNewDelivery, 3000); // Check every 3 seconds
+        if (deliveryCheckInterval) return;
+        console.log("Starting to poll for deliveries every 3 seconds.");
+        fetchDelivery();
+        deliveryCheckInterval = setInterval(fetchDelivery, 3000);
     }
 
-    // Stop periodic check
     function stopCheckingForDeliveries() {
-         if (checkInterval) {
-             console.log("Stopping delivery checks.");
-            clearInterval(checkInterval);
-            checkInterval = null;
-         }
+        if (deliveryCheckInterval) {
+            clearInterval(deliveryCheckInterval);
+            deliveryCheckInterval = null;
+            console.log("Stopping delivery polling.");
+        }
     }
 
     // --- Event Listeners ---
 
-    // Event Listener for the button Aceitar
-    acceptButton?.addEventListener('click', () => { // Added safety check
+    acceptButton?.addEventListener('click', () => {
         if (!currentDelivery) return;
 
         acceptButton.disabled = true;
         finalizeButton.disabled = false;
-        // Update delivery status (optional, visual or internal state)
         currentDelivery.status = 'Accepted';
         console.log(`Entrega #${currentDelivery.id} aceita.`);
+
+        //Simulate API call
+        setTimeout(() => {
+            updateDeliveryStatus(currentDelivery.id, 'Accepted'); // Update "database"
+        }, 500);
+        // In a real app, you might notify the backend/establishment here
     });
 
-    // Event Listener for the button Finalizar
-    finalizeButton?.addEventListener('click', () => { // Added safety check
-        if (!currentDelivery || acceptButton.disabled === false) return; // Only finalize if accepted
+    finalizeButton?.addEventListener('click', () => {
+        if (!currentDelivery || acceptButton.disabled === false) return;
 
         console.log(`Entrega #${currentDelivery.id} finalizada.`);
         currentDelivery.status = 'Finalized';
-        completedDeliveries.push(currentDelivery); // Add to history
-        saveCompletedDeliveries(); // Save history to localStorage
-        updateHistoryList(); // Update the history menu
-        clearCurrentDelivery(); // Clear the current delivery from the main view
+        currentDelivery.finalizedTimestamp = Date.now(); // Add finalized time
+        completedDeliveries.push(currentDelivery);
+        saveCompletedDeliveries();
+        updateHistoryList();
+        clearCurrentDelivery();
+
+        //Simulate API call
+        setTimeout(() => {
+            updateDeliveryStatus(currentDelivery.id, 'Finalized'); // Update "database"
+        }, 500);
+        // In a real app, notify backend/establishment
     });
 
-    // Removed simulate button listener
-    // simulateDeliveryButton.addEventListener('click', simulateNewDelivery);
-
-    // Event Listeners for the History Menu
-    historyToggle?.addEventListener('click', () => { // Added safety check
+    // History Menu
+    historyToggle?.addEventListener('click', () => {
         historyMenu.classList.toggle('visible');
+        if (historyMenu.classList.contains('visible')) {
+            updateHistoryList(); // Refresh history when opening
+        }
     });
 
-    closeHistoryButton?.addEventListener('click', () => { // Added safety check
+    closeHistoryButton?.addEventListener('click', () => {
         historyMenu.classList.remove('visible');
     });
 
-    // Close the menu if clicking outside of it
-    mainContent?.addEventListener('click', (event) => { // Added safety check
+    mainContent?.addEventListener('click', (event) => {
          if (historyMenu?.classList.contains('visible') && !historyMenu.contains(event.target) && event.target !== historyToggle && !historyToggle?.contains(event.target)) {
             historyMenu.classList.remove('visible');
         }
     });
-
-     // Listen for storage changes from other tabs/windows (optional but good practice)
-     window.addEventListener('storage', (event) => {
-        // console.log("Storage event detected:", event.key); // Debugging
-        if (event.key === PENDING_DELIVERY_KEY && !currentDelivery) {
-            console.log("Pending delivery key changed in storage, checking...");
-            checkForNewDelivery(); // Re-check immediately if the relevant key changed
-        }
-         if (event.key === COMPLETED_DELIVERIES_KEY) {
-            console.log("Completed deliveries updated in storage, reloading history...");
-            completedDeliveries = JSON.parse(localStorage.getItem(COMPLETED_DELIVERIES_KEY)) || [];
-            updateHistoryList(); // Update history if changed elsewhere
-         }
-    });
-
 
     // --- Initialization ---
     console.log("Delivery Person Script Initialized");
@@ -188,3 +180,17 @@ document.addEventListener('DOMContentLoaded', () => {
     startCheckingForDeliveries(); // Start checking for new deliveries immediately
 
 });
+
+// --- Simulated Database ---
+let deliveries = [];
+
+function getPendingDelivery() {
+    return deliveries.find(delivery => delivery.status === 'Pending');
+}
+
+function updateDeliveryStatus(id, status) {
+    const delivery = deliveries.find(delivery => delivery.id === id);
+    if (delivery) {
+        delivery.status = status;
+    }
+}
